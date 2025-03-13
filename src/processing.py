@@ -1,3 +1,6 @@
+from typing import List, Dict
+
+
 def filter_by_state(transactions, state="EXECUTED") -> list:
     filtered_transactions = [transaction for transaction in transactions if transaction.get('state') == state]
     return filtered_transactions
