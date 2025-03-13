@@ -1,6 +1,6 @@
 import datetime as dt
 import re
-from src.masks import get_mask_account, get_mask_card_number,get_date
+from src.masks import get_mask_account, get_mask_card_number
 
 
 def mask_account_card(card_number: str) -> str:
@@ -12,8 +12,11 @@ def mask_account_card(card_number: str) -> str:
     else:
         return get_mask_card_number(str_only_numbers)
 
-    def get_date(date_format: str) -> str:
-        """Функция изменения формата даты"""
-        date_object = dt.datetime.strptime(date_format[0:10], "%Y %m. %d")
-        date_class_str = date_object.strftime("%d.%m.%Y")
-        return date_class_str
+
+
+def get_date(date_format: str) -> str:
+    """Функция изменения формата даты"""
+    date_object = dt.datetime.strptime(date_format[0:10], "%Y %m. %d")
+    date_class_str = date_object.strftime("%d.%m.%Y")
+    return date_class_str
+
