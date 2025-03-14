@@ -1,0 +1,16 @@
+Index: src/widget.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import datetime as dt\r\nimport re\r\nfrom src.masks import get_mask_account, get_mask_card_number,get_date\r\n\r\n\r\ndef mask_account_card(card_number: str) -> str:\r\n    \"\"\"Фунцкция которая принимает счет и номер карты и возвращает зашифрованный\"\"\"\r\n    only_numbers =re.findall(r\"\\d+\", card_number)\r\n    str_only_numbers = \"\".join(only_numbers)\r\n    if \"Cчет\" in card_number:\r\n        return get_mask_account(str_only_numbers)\r\n    else:\r\n        return get_mask_card_number(str_only_numbers)\r\n\r\n    def get_date(date_format: str) -> str:\r\n        \"\"\"Функция изменения формата даты\"\"\"\r\n        date_object = dt.datetime.strptime(date_format[0:10], \"%Y %m. %d\")\r\n        date_class_str = date_object.strftime(\"%d.%m.%Y\")\r\n        return date_class_str\r\n
+===================================================================
+diff --git a/src/widget.py b/src/widget.py
+--- a/src/widget.py	(revision 642f1df99ea110fadda4c3b257a014b74f862ab2)
++++ b/src/widget.py	(date 1741858604950)
+@@ -1,6 +1,6 @@
+ import datetime as dt
+ import re
+-from src.masks import get_mask_account, get_mask_card_number,get_date
++from src.masks import get_mask_account, get_mask_card_number,
+ 
+ 
+ def mask_account_card(card_number: str) -> str:
