@@ -1,30 +1,79 @@
+
 import pytest
-from src.processing import filter_by_state,sort_by_date
+from src.processing import get_mask_card_number, filter_by_state, sort_by_date
 
 
-@pytest.mark.parametrize(
-    "state, result",
-    [("EXECUTED", [41428829, 939719570]),("CANCELED", [594226727, 615064591]), ("", []),])
-def test_filter_by_state(static_data: list[dict], state: str, result: list[int]) -> None:
-    filtered_transactive = filter_by_state(static_data, state)
-    filtered_ids = [transactive['id'] for transactive in filtered_transactive]
-    assert filtered_ids == result
+def test_get_mask_card_number() -> None:
+    """Тестирование функции get_mask_card_number"""
 
-@pytest.mark.parametrize(
-    "data, result",
-    [
-         (
-            [
-                {"id": 41428829, "state": "EXECUTED", "date": "2019-07-03T18:35:29.512364"},
-                {"id": 939719570, "state": "EXECUTED", "date": "2018-06-30T02:08:58.425572"},
-            ],
-            [
-                        {"id": 939719570, "state": "EXECUTED", "date": "2018-06-30T02:08:58.425572"},
-                        {"id": 41428829, "state": "EXECUTED", "date": "2019-07-03T18:35:29.512364"},
-                    ],
-            )
-        ],
-    )
-def test_sort_by_date(data: list[dict], result: list[dict]) -> None:
-    sorted_data = sort_by_date(data)
-    assert sorted_data == result
+    # Тесты на корректное поведение
+    assert get_mask_card_number("1234567812345678") == "**** **** ****5678"
+    assert get_mask_card_number("0000111122223333") == "**** **** ****3333"
+
+    # Тестирование исключений
+    with pytest.raises(ValueError, match="Card number must contain only digits."):
+        get_mask_card_number("1234abcd5678efgh")  # Номер карты содержит нецифровые символы
+
+    with pytest.raises(ValueError, match="Номер карты должен содержать ровно 16 цифр."):
+        get_mask_card_number("12345678")  # Номер карты слишком короткий
+
+    with pytest.raises(ValueError, match="Номер карты должен содержать ровно 16 цифр."):
+        get_mask_card_number("123456781234567890")  # Номер карты слишком длинный
+
+
+def test_filter_by_state() -> None:
+    """Тестирование функции filter_by_state"""
+
+    transactions = [
+        {"id": 1, "state": "EXECUTED"},
+        {"id": 2, "state": "CANCELED"},
+        {"id": 3, "state": "EXECUTED"},
+        {"id": 4, "state": "PENDING"}
+    ]
+
+    # Фильтрация по состоянию "EXECUTED"
+    filtered = filter_by_state(transactions, state="EXECUTED")
+    assert len(filtered) == 2
+    assert filtered == [
+        {"id": 1, "state": "EXECUTED"},
+        {"id": 3, "state": "EXECUTED"}
+    ]
+
+    # Фильтрация по состоянию "CANCELED"
+    filtered = filter_by_state(transactions, state="CANCELED")
+    assert len(filtered) == 1
+    assert filtered == [{"id": 2, "state": "CANCELED"}]
+
+    # Фильтрация по состоянию, которого нет
+    filtered = filter_by_state(transactions, state="APPROVED")
+    assert len(filtered) == 0  # Ничего не найдено
+
+
+def test_sort_by_date() -> None:
+    """Тестирование функции sort_by_date"""
+
+    transactions = [
+        {"id": 1, "date": "2021-01-01T10:00:00.000000"},
+        {"id": 2, "date": "2020-05-15T14:30:00.000000"},
+        {"id": 3, "date": "2022-07-20T08:15:00.000000"}
+    ]
+
+    # Сортировка по убыванию
+    sorted_transactions = sort_by_date(transactions, reverse=True)
+    assert sorted_transactions == [
+        {"id": 3, "date": "2022-07-20T08:15:00.000000"},
+        {"id": 1, "date": "2021-01-01T10:00:00.000000"},
+        {"id": 2, "date": "2020-05-15T14:30:00.000000"}
+    ]
+
+    # Сортировка по возрастанию
+    sorted_transactions = sort_by_date(transactions, reverse=False)
+    assert sorted_transactions == [
+        {"id": 2, "date": "2020-05-15T14:30:00.000000"},
+        {"id": 1, "date": "2021-01-01T10:00:00.000000"},
+        {"id": 3, "date": "2022-07-20T08:15:00.000000"}
+    ]
+
+    # Ничего не передано в функцию (пустой список)
+    sorted_transactions = sort_by_date([], reverse=True)
+    assert sorted_transactions == []  # Результат тоже пустой список

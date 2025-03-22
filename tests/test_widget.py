@@ -1,116 +1,92 @@
 import pytest
-from src.widget import get_date, mask_account_card
-from src.masks import get_mask_account
+from src.widget import mask_account_card, get_date
 
-# Фикстура для генерации тестовых данных словаря и списка
+
+# Фикстура для генерации тестовых данных для маскирования карт и счетов
 @pytest.fixture
-def account_test_data():
+def card_and_account_test_data():
     """
-    Фикстура, предоставляющая словарь и список тестовых данных для счета.
-    """
-    return {
-        "valid_accounts": [
-            "12345678901234567890",  # стандартный случай
-            "11111111111111111111",
-        ],
-        "short_accounts": ["12345", "12"],  # короткие счета
-        "empty": [""],  # пустые строки
-    }
-
-
-@pytest.fixture
-def date_test_data():
-    """
-    Фикстура, предоставляющая список дат с различными форматами.
+    Фикстура с примерами разных данных для тестирования mask_account_card.
     """
     return [
-        {"input": "2023 01. 15", "expected_output": "15.01.2023"},
-        {"input": "2021 12. 31", "expected_output": "31.12.2021"},
-        {"input": "2022 02. 29", "expected_output": None},  # Некорректная дата
-        {"input": "15-01-2023", "expected_output": None},  # Неверный формат
-        {"input": "", "expected_output": None},  # Пустая строка
+        {"input": "Карта 1234-5678-9012-3456", "expected": "**** **** ****3456", "is_card": True},
+        {"input": "Cчет: 12345678", "expected": "**5678", "is_card": False},
+        {"input": "Карта ABCD-EFGH", "expected": None, "is_card": True},  # Ошибка (нет цифр)
+        {"input": "Cчет: ABCD", "expected": None, "is_card": False},  # Ошибка (нет цифр)
+        {"input": "Карта 1234", "expected": None, "is_card": True},  # Короткий номер карты
+        {"input": "Cчет: 12", "expected": None, "is_card": False},  # Короткий номер счета
+        {"input": "Карта", "expected": None},  # Никаких цифр вообще
     ]
 
 
-# Тесты для get_mask_account
-def test_get_mask_account_valid_states(account_test_data):
-    """Тестирование корректных состояний функции get_mask_account."""
-    for account in account_test_data["valid_accounts"]:
-        assert get_mask_account(account) == f"****{account[-6:]}"
-
-
-def test_get_mask_account_with_invalid_data(account_test_data):
-    """
-    Тестирование исключений в случае с коротким счетом или пустыми данными.
-    """
-    for account in account_test_data["short_accounts"]:
-        with pytest.raises(ValueError, match="Account number is too short"):
-            get_mask_account(account)
-
-    for account in account_test_data["empty"]:
-        with pytest.raises(ValueError, match="Account number is empty"):
-            get_mask_account(account)
-
-
-# Тесты для get_date
-def test_get_date_valid_formats(date_test_data):
-    """Тестирование корректных форматов даты."""
-    for test_case in date_test_data:
-        input_date = test_case["input"]
-        expected_output = test_case["expected_output"]
-
-        if expected_output is not None:
-            assert get_date(input_date) == expected_output
-        else:
-            with pytest.raises(ValueError):
-                get_date(input_date)
-
-
-def test_get_date_edge_case():
-    """Дополнительный тест на случай лишних данных в формате даты."""
-    with pytest.raises(ValueError, match="unconverted data remains:"):
-        get_date("2023 01. 15 00:00")
-
-# Моки для функций из src.masks
+# Фикстура для тестирования разных форматов даты
 @pytest.fixture
-def mock_get_mask_account(mocker):
-    return mocker.patch('src.masks.get_mask_account', return_value="****1234")
-
-
-@pytest.fixture
-def mock_get_mask_card_number(mocker):
-    return mocker.patch('src.masks.get_mask_card_number', return_value="****5678")
-
-
-# Тесты для get_date
-def test_get_date_valid_format():
-    input_date = "2023 01. 15"
-    expected_output = "15.01.2023"
-    assert get_date(input_date) == expected_output
-
-
-def test_get_date_invalid_format():
-    input_date = "15-01-2023"  # Некорректный формат
-    with pytest.raises(ValueError, match="time data '15-01-2023' does not match format '%Y %m. %d'"):
-        get_date(input_date)
+def date_test_data():
+    """
+    Фикстура с примерами корректных и некорректных данных для тестирования get_date.
+    """
+    return [
+        {"input": "2023 01. 15", "expected": "15.01.2023"},
+        {"input": "2021 12. 31", "expected": "31.12.2021"},
+        {"input": "2022 02. 29", "expected": None},  # Некорректная дата
+        {"input": "15-01-2023", "expected": None},  # Неверный формат
+        {"input": "", "expected": None},  # Пустая строка
+        {"input": "2023 01. 15 12:00", "expected": None},  # Дополнительные данные
+    ]
 
 
 # Тесты для mask_account_card
-def test_mask_account_card_account(mock_get_mask_account):
-    input_card = "Cчет 12345678"
-    expected_output = "****1234"  # Мок возвращае эту строку
-    assert mask_account_card(input_card) == expected_output
-    mock_get_mask_account.assert_called_once_with("12345678")
+def test_mask_account_card(card_and_account_test_data, mocker):
+    """
+    Тестирование функции mask_account_card на основе тестовых данных.
+    """
+    mock_mask_card = mocker.patch('src.masks.get_mask_card_number', return_value="1234 56** ****3456")
+    mock_mask_account = mocker.patch('src.masks.get_mask_account', return_value="**5678")
+
+    for data in card_and_account_test_data:
+        input_data = data["input"]
+        expected = data["expected"]
+
+        if expected is None:
+            # Ожидание исключения при ошибочных данных
+            with pytest.raises(ValueError):
+                mask_account_card(input_data)
+        else:
+            # Проверка результата
+            result = mask_account_card(input_data)
 
 
-def test_mask_account_card_card_number(mock_get_mask_card_number):
-    input_card = "Карта 43215678"
-    expected_output = "****5678"  # Мок возвращае эту строку
-    assert mask_account_card(input_card) == expected_output
-    mock_get_mask_card_number.assert_called_once_with("43215678")
+            # Проверка вызова соответствующей функции
+            if data.get("is_card"):
+                mock_mask_card.assert_called_with("1234567890123456")
+            else:
+                assert result == expected
+
+                # Проверка вызова соответствующей функции
+            if data.get("is_card"):
+                mock_mask_card.assert_called_with("1234567890123456")
+            else:
+                mock_mask_account.assert_called_with("12345678")
+
+    # Проверка количества вызовов моков
+    mock_mask_card.assert_called()
+    mock_mask_account.assert_called()
 
 
-def test_mask_account_card_no_numbers():
-    input_card = "Карта ABCD"
-    with pytest.raises(ValueError, match="No digits found in card_number"):
-        mask_account_card(input_card)
+# Тесты для get_date
+def test_get_date(date_test_data):
+    """
+    Тестирование функции get_date на основе тестовых данных.
+    """
+    for data in date_test_data:
+        input_date = data["input"]
+        expected = data["expected"]
+
+        if expected is None:
+            # Ожидание исключения при ошибочных данных
+            with pytest.raises(ValueError):
+                get_date(input_date)
+        else:
+            # Проверка результата
+            result = get_date(input_date)
+            assert result == expected

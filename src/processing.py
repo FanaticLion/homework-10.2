@@ -1,5 +1,6 @@
 from typing import List, Dict
 
+
 def get_mask_card_number(card_number: str) -> str:
     card_str = str(card_number)
     if not card_str.isdigit():
@@ -17,6 +18,7 @@ def get_mask_account(account_number: str) -> str:
         raise ValueError("Номер счёта должен содержать минимум 4 цифры.")
     return f"**{account_str[-4:]}"
 
+
 def filter_by_state(transactions, state="EXECUTED") -> list:
     filtered_transactions = [transaction for transaction in transactions if transaction.get('state') == state]
     return filtered_transactions
@@ -24,6 +26,8 @@ def filter_by_state(transactions, state="EXECUTED") -> list:
 
 def sort_by_date(transactions: List[Dict], reverse: bool = True) -> List[Dict]:
     return sorted(transactions, key=lambda x: x['date'], reverse=reverse)
+
+
 if __name__ == "__main__":
     result = sort_by_date([
         {'id': 41428829, 'state': 'EXECUTED', 'date': '2019-07-03T18:35:29.512364'},
