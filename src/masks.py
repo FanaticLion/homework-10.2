@@ -16,18 +16,21 @@ def get_mask_card_number(card_number: str) -> str:
     # Формирование маски
     return f"{card_str[:4]} {card_str[4:6]} ** **** **** {card_str[-4:]}"
 
+
 def get_mask_account(account_number: str) -> str:
-    account_str = str(account_number)
-
-    # Проверка на то, что строка содержит только цифры
-    if not account_str.isdigit():
+    """Создать маску для номера счёта."""
+    # Проверка на пустую строку или строку из пробелов
+    if not account_number.strip():
+        raise ValueError("Номер счёта должен содержать минимум 4 цифры.")
+    # Проверка, что строка состоит только из цифр
+    if not account_number.isdigit():
         raise ValueError("Account number must contain only digits.")
-
-    # Проверка на минимальную длину строки
-    if len(account_str) < 4:
+    # Проверка на минимальное количество символов
+    if len(account_number) < 4:
         raise ValueError("Номер счёта должен содержать минимум 4 цифры.")
 
-    # Формирование маски
-    masked_part = "*" * (len(account_str) - 4)  # Звездочки вместо всех символов, кроме последних 4
-    visible_part = account_str[-4:]  # Последние 4 символа
-    return f"{masked_part}{visible_part}"
+    # Маскирование
+    if len(account_number) <= 10:  # Если длина строки не превышает 10
+        return "****" + account_number[-4:]
+    else:  # Если длина строки больше 10
+        return "****" + account_number[-6:]
