@@ -55,7 +55,6 @@ def test_mask_account_card(card_and_account_test_data, mocker):
             # Проверка результата
             result = mask_account_card(input_data)
 
-
             # Проверка вызова соответствующей функции
             if data.get("is_card"):
                 mock_mask_card.assert_called_with("1234567890123456")
