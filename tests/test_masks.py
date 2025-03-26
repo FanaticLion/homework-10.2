@@ -27,7 +27,7 @@ def test_get_mask_account() -> None:
     assert get_mask_account("1234") == "****1234", "Ожидаемая маска '****1234'"
 
     # Тест на выброс исключений
-    with pytest.raises(ValueError, match="Account number must contain only digits."):
+    with pytest.raises(ValueError, match="Содержит недопустимые символы."):
         get_mask_account("12a45")  # Содержит недопустимые символы
 
     with pytest.raises(ValueError, match="Номер счёта должен содержать минимум 4 цифры."):

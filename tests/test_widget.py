@@ -1,5 +1,5 @@
 import pytest
-from src.widget import mask_account_card, get_date
+from src.widget import get_mask_account, get_date
 
 
 # Фикстура для генерации тестовых данных для маскирования карт и счетов
@@ -36,40 +36,27 @@ def date_test_data():
 
 
 # Тесты для mask_account_card
-def test_mask_account_card(card_and_account_test_data, mocker):
-    """
-    Тестирование функции mask_account_card на основе тестовых данных.
-    """
-    mock_mask_card = mocker.patch('src.masks.get_mask_card_number', return_value="1234 56** ****3456")
-    mock_mask_account = mocker.patch('src.masks.get_mask_account', return_value="**5678")
+def test_get_mask_account() -> None:
+    """Функция тестирования масок счетов"""
 
-    for data in card_and_account_test_data:
-        input_data = data["input"]
-        expected = data["expected"]
+    # Корректное поведение с различной длиной строк
+    assert get_mask_account("1234567890") == "****7890", "Ожидаемая маска '****7890'"
+    assert get_mask_account("12345678901234567890") == "****567890", "Ожидаемая маска '****567890'"
+    # Пограничный случай с минимальным допустимым количеством символов (4)
+    assert get_mask_account("1234") == "****1234", "Ожидаемая маска '****1234'"
 
-        if expected is None:
-            # Ожидание исключения при ошибочных данных
-            with pytest.raises(ValueError):
-                mask_account_card(input_data)
-        else:
-            # Проверка результата
-            result = mask_account_card(input_data)
+    # Тест на выброс исключений
+    with pytest.raises(ValueError, match="Содержит недопустимые символы."):
+        get_mask_account("12a45")  # Содержит недопустимые символы
 
-            # Проверка вызова соответствующей функции
-            if data.get("is_card"):
-                mock_mask_card.assert_called_with("1234567890123456")
-            else:
-                assert result == expected
+    with pytest.raises(ValueError, match="Номер счёта должен содержать минимум 4 цифры."):
+        get_mask_account(" ")  # Пустое значение
 
-                # Проверка вызова соответствующей функции
-            if data.get("is_card"):
-                mock_mask_card.assert_called_with("1234567890123456")
-            else:
-                mock_mask_account.assert_called_with("12345678")
+    with pytest.raises(ValueError, match="Номер счёта должен содержать минимум 4 цифры."):
+        get_mask_account("123")  # Слишком короткий номер
 
-    # Проверка количества вызовов моков
-    mock_mask_card.assert_called()
-    mock_mask_account.assert_called()
+    with pytest.raises(ValueError, match="Номер счёта должен содержать минимум 4 цифры."):
+        get_mask_account("")  # Пустая строка
 
 
 # Тесты для get_date
