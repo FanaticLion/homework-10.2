@@ -19,12 +19,18 @@ def get_mask_card_number(card_number: str) -> str:
 
 def get_mask_account(account_number: str) -> str:
     """Создать маску для номера счёта."""
+    # Проверка на тип входного значения
+    if not isinstance(account_number, str):
+        raise TypeError("Номер счёта должен быть строкой.")
+
     # Проверка на пустую строку или строку из пробелов
     if not account_number.strip():
         raise ValueError("Номер счёта должен содержать минимум 4 цифры.")
+
     # Проверка, что строка состоит только из цифр
     if not account_number.isdigit():
-        raise ValueError("Account number must contain only digits.")
+        raise ValueError("Содержит недопустимые символы.")
+
     # Проверка на минимальное количество символов
     if len(account_number) < 4:
         raise ValueError("Номер счёта должен содержать минимум 4 цифры.")
